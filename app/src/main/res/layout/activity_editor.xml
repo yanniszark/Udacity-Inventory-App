@@ -190,12 +190,14 @@
             android:textColor="@color/colorAccent" />
 
 
-        <!-- Name field -->
+        <!-- Picture field -->
         <ImageView
             android:id="@+id/edit_product_picture"
             android:layout_width="@dimen/list_item_height"
             android:layout_height="@dimen/list_item_height"
             android:layout_gravity="center_horizontal"
+            android:clickable="true"
+            android:scaleType="centerCrop"
             android:src="@mipmap/ic_launcher" />
 
     </LinearLayout>

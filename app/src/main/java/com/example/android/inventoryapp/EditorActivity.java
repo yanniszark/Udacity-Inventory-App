@@ -9,20 +9,23 @@ import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.android.inventoryapp.data.InventoryContract;
+import com.bumptech.glide.Glide;
 import com.example.android.inventoryapp.data.InventoryContract.ProductEntry;
 
 import butterknife.BindView;
@@ -36,23 +39,37 @@ import static com.example.android.inventoryapp.data.InventoryContract.ProductEnt
 public class EditorActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor> {
 
+
     private static final String LOG_TAG = EditorActivity.class.getSimpleName();
 
-    /** Identifier for the product data loader */
+    /* Identifier for load image result */
+    private static final int RESULT_LOAD_IMAGE = 145;
+
+    /**
+     * Identifier for the product data loader
+     */
     private static final int EXISTING_PRODUCT_LOADER = 0;
 
-    /** Content URI for the existing product (null if it's a new product) */
+    /**
+     * Content URI for the existing product (null if it's a new product)
+     */
     private Uri mCurrentProductUri;
 
-    /** EditText field to enter the product's name */
+    /**
+     * EditText field to enter the product's name
+     */
     @BindView(R.id.edit_product_name)
     EditText productNameEditText;
 
-    /** EditText field to enter the product's price */
+    /**
+     * EditText field to enter the product's price
+     */
     @BindView(R.id.edit_product_price)
     EditText productPriceEditText;
 
-    /** TextView field to display the product's quantity and Button(s) to modify it*/
+    /**
+     * TextView field to display the product's quantity and Button(s) to modify it
+     */
     @BindView(R.id.textview_product_quantity)
     TextView productQuantityTextView;
     @BindView(R.id.button_quantity_decrement)
@@ -60,18 +77,32 @@ public class EditorActivity extends AppCompatActivity implements
     @BindView(R.id.button_quantity_increment)
     Button quantityIncrementButton;
 
-    /** EditText field to enter the supplier's name */
+    /**
+     * ImageView field for the product's image
+     */
+    @BindView(R.id.edit_product_picture)
+    ImageView productPictureImageView;
+
+    /**
+     * EditText field to enter the supplier's name
+     */
     @BindView(R.id.edit_product_supplier)
     EditText productSupplierEditText;
 
-    /** EditText field to enter the supplier's mail */
+    /**
+     * EditText field to enter the supplier's mail
+     */
     @BindView(R.id.edit_product_supplier_mail)
     EditText productSupplierMailEditText;
 
-    /** Temporarily store the supplier mail */
+    /**
+     * Temporarily store the supplier mail
+     */
     String mSupplierMail;
 
-    /** Boolean flag that keeps track of whether the product has been edited (true) or not (false) */
+    /**
+     * Boolean flag that keeps track of whether the product has been edited (true) or not (false)
+     */
     private boolean productHasChanged = false;
 
 
@@ -119,7 +150,6 @@ public class EditorActivity extends AppCompatActivity implements
         ButterKnife.bind(this);
 
 
-
         // Setup OnTouchListeners on all the input fields, so we can determine if the user
         // has touched or modified them. This will let us know if there are unsaved changes
         // or not, if the user tries to leave the editor without saving.
@@ -127,6 +157,7 @@ public class EditorActivity extends AppCompatActivity implements
         productPriceEditText.setOnTouchListener(mTouchListener);
         productSupplierEditText.setOnTouchListener(mTouchListener);
         productSupplierMailEditText.setOnTouchListener(mTouchListener);
+
         quantityDecrementButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -144,22 +175,55 @@ public class EditorActivity extends AppCompatActivity implements
             }
         });
 
+        productPictureImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent;
+
+                if (Build.VERSION.SDK_INT < 19) {
+                    intent = new Intent(Intent.ACTION_GET_CONTENT);
+                } else {
+                    intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                }
+
+                intent.setType("image/*");
+                startActivityForResult(Intent.createChooser(intent, "Select Picture"), RESULT_LOAD_IMAGE);
+            }
+        });
+
     }
 
 
     /**
      * Get user input from editor and save product into database.
      */
-    private void saveProduct() {
+    private boolean saveProduct() {
         // Read from input fields
         // Use trim to eliminate leading or trailing white space
         String nameString = productNameEditText.getText().toString().trim();
+        if (nameString.isEmpty()) {
+            Toast.makeText(this, getString(R.string.toast_enter_product_name), Toast.LENGTH_SHORT).show();
+            return false;
+        }
         String priceString = productPriceEditText.getText().toString().trim();
+        if (priceString.isEmpty()) {
+            Toast.makeText(this, getString(R.string.toast_enter_product_price), Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
         String quantityString = productQuantityTextView.getText().toString().trim();
         String supplierString = productSupplierEditText.getText().toString().trim();
+        if (supplierString.isEmpty()) {
+            Toast.makeText(this, getString(R.string.toast_enter_product_supplier), Toast.LENGTH_SHORT).show();
+            return false;
+        }
         String supplierMailString = productSupplierMailEditText.getText().toString().trim();
+        if (supplierMailString.isEmpty()) {
+            Toast.makeText(this, getString(R.string.toast_enter_product_supplier_mail), Toast.LENGTH_SHORT).show();
+            return false;
+        }
 
-        //TODO: Save picture if one has been given
         // Check if this is supposed to be a new product
         // and check if all the fields in the editor are blank
         if (mCurrentProductUri == null &&
@@ -169,7 +233,7 @@ public class EditorActivity extends AppCompatActivity implements
             // Since no fields were modified, we can return early without creating a new product.
             // No need to create ContentValues and no need to do any ContentProvider operations.
             Toast.makeText(this, "No new product saved", Toast.LENGTH_SHORT).show();
-            return;
+            return true;
         }
 
         // Create a ContentValues object where column names are the keys,
@@ -180,6 +244,10 @@ public class EditorActivity extends AppCompatActivity implements
         values.put(ProductEntry.COLUMN_PRODUCT_QUANTITY, quantityString);
         values.put(ProductEntry.COLUMN_PRODUCT_SUPPLIER, supplierString);
         values.put(ProductEntry.COLUMN_PRODUCT_SUPPLIER_MAIL, supplierMailString);
+        //Check if there is a new image
+        Uri uri = (Uri) productPictureImageView.getTag(R.string.TAG_KEY_IMAGE_URI);
+        if (uri != null)
+            values.put(ProductEntry.COLUMN_PRODUCT_PICTURE, uri.toString());
 
         // Determine if this is a new or existing product by checking if mCurrentproductUri is null or not
         if (mCurrentProductUri == null) {
@@ -215,6 +283,7 @@ public class EditorActivity extends AppCompatActivity implements
                         Toast.LENGTH_SHORT).show();
             }
         }
+        return true;
     }
 
     @Override
@@ -249,9 +318,8 @@ public class EditorActivity extends AppCompatActivity implements
             // Respond to a click on the "Save" menu option
             case R.id.action_save:
                 // Save product to database
-                saveProduct();
-                // Exit activity
-                finish();
+                if (saveProduct())
+                    finish();
                 return true;
             // Respond to a click on the "Delete" menu option
             case R.id.action_delete:
@@ -364,7 +432,7 @@ public class EditorActivity extends AppCompatActivity implements
             int productQuantity = cursor.getInt(quantityColumnIndex);
             String productSupplier = cursor.getString(supplierColumnIndex);
             String productSupplierMail = cursor.getString(supplierMailColumnIndex);
-            //TODO: Get Picture
+            String productPicture = cursor.getString(pictureColumnIndex);
             mSupplierMail = productSupplierMail;
 
             // Update the views on the screen with the values from the database
@@ -373,6 +441,11 @@ public class EditorActivity extends AppCompatActivity implements
             productQuantityTextView.setText(String.valueOf(productQuantity));
             productSupplierEditText.setText(productSupplier);
             productSupplierMailEditText.setText(productSupplierMail);
+            if (productPicture != null && !productPicture.isEmpty())
+                Glide
+                        .with(this)
+                        .load(Uri.parse(productPicture))
+                        .into(productPictureImageView);
 
         }
     }
@@ -470,5 +543,28 @@ public class EditorActivity extends AppCompatActivity implements
 
         // Close the activity
         finish();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && null != data) {
+            Uri mUri = data.getData();
+            Log.i(LOG_TAG, "Uri: " + mUri.toString());
+
+            /* Set the product image to the new image */
+            Glide
+                    .with(this)
+                    .load(mUri)
+                    .into(productPictureImageView);
+
+            /* Store image uri as ImageView tag */
+            productPictureImageView.setTag(R.string.TAG_KEY_IMAGE_URI, mUri);
+            /* Set the changed flag to true */
+            productHasChanged = true;
+
+        }
+
+
     }
 }

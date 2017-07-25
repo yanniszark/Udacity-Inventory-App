@@ -1,10 +1,7 @@
 package com.example.android.inventoryapp.data;
 
-import android.content.Intent;
-import android.icu.text.SimpleDateFormat;
-import android.icu.text.StringPrepParseException;
-import android.net.Uri;
 import android.content.ContentResolver;
+import android.net.Uri;
 import android.provider.BaseColumns;
 
 /**

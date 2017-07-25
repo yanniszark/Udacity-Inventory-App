@@ -3,7 +3,6 @@ package com.example.android.inventoryapp;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.view.LayoutInflater;
@@ -15,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.example.android.inventoryapp.data.InventoryContract.ProductEntry;
 
 import butterknife.BindView;
@@ -79,22 +79,29 @@ public class ProductCursorAdapter extends CursorAdapter {
         String productName = cursor.getString(nameColumnIndex);
         int productPrice = cursor.getInt(priceColumnIndex);
         final int productQuantity = cursor.getInt(quantityColumnIndex);
-        //TODO: Retrieve picture
-
+        String productPicture = cursor.getString(pictureColumnIndex);
 
         // Update the TextViews with the attributes for the current pet
         holder.productNameTextView.setText(productName);
         holder.productPriceTextView.setText(ProductEntry.PRODUCT_PRICE_CURRENCY + " " + String.valueOf(productPrice));
         holder.productQuantityTextView.setText(String.valueOf(productQuantity));
-        //TODO: Setup OnClickListener for the SALE button
+        if (productPicture != null && !productPicture.isEmpty())
+            Glide
+                    .with(context)
+                    .load(Uri.parse(productPicture))
+                    .into(holder.productPictureImageView);
+        else
+            holder.productPictureImageView.setImageResource(R.drawable.default_product_image);
+
+        // Setup onClickListener for the Sale Button
         holder.productSaleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                int rowsAffected = 0;
+                int rowsAffected;
                 switch (productQuantity) {
                     case ProductEntry.MINIMUM_QUANTITY:
-                        rowsAffected = 0;
-                        break;
+                        Toast.makeText(context, context.getString(R.string.toast_minimum_quantity_reached), Toast.LENGTH_SHORT).show();
+                        return;
                     default:
                         /* Create the values to update */
                         ContentValues values = new ContentValues();

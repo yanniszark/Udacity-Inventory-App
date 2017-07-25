@@ -40,10 +40,14 @@ import com.example.android.inventoryapp.data.InventoryContract.ProductEntry;
 public class CatalogActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor> {
 
-    /** Identifier for the product data loader */
+    /**
+     * Identifier for the product data loader
+     */
     private static final int PRODUCT_LOADER = 0;
 
-    /** Adapter for the ListView */
+    /**
+     * Adapter for the ListView
+     */
     ProductCursorAdapter mCursorAdapter;
 
     @Override
@@ -122,8 +126,6 @@ public class CatalogActivity extends AppCompatActivity implements
         int rowsDeleted = getContentResolver().delete(ProductEntry.CONTENT_URI, null, null);
         Log.v("CatalogActivity", rowsDeleted + " rows deleted from product database");
     }
-
-
 
 
     @Override
