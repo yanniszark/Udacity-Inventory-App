@@ -99,7 +99,6 @@ public class CatalogActivity extends AppCompatActivity implements
 
         // Kick off the loader
         getLoaderManager().initLoader(PRODUCT_LOADER, null, this);
-        insertProduct();
     }
 
 
@@ -116,16 +115,9 @@ public class CatalogActivity extends AppCompatActivity implements
         values.put(ProductEntry.COLUMN_PRODUCT_SUPPLIER, "Acme");
         values.put(ProductEntry.COLUMN_PRODUCT_SUPPLIER_MAIL, "acme@acme.com");
 
-        Uri newUri = getContentResolver().insert(ProductEntry.CONTENT_URI, values);
+        getContentResolver().insert(ProductEntry.CONTENT_URI, values);
     }
 
-    /**
-     * Helper method to delete all products in the database.
-     */
-    private void deleteAllProducts() {
-        int rowsDeleted = getContentResolver().delete(ProductEntry.CONTENT_URI, null, null);
-        Log.v("CatalogActivity", rowsDeleted + " rows deleted from product database");
-    }
 
 
     @Override
